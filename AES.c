@@ -155,6 +155,56 @@ unsigned char invsbox[256] = {
   0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d 
 };
 
+void mixColumn(){
+}
+
+void addRoundKey(unsigned char* state, unsigned char* roundKey){
+    for(int i=0; i<16; ++i){
+        state[i] ^= roundKey[i];
+}
+
+void ShiftRows(unsigned char* state){
+    unsigned char shifter[16];
+
+    // shifting row one
+    shifter[0] = state[0];
+    shifter[4] = state[4];
+    shifter[8] = state[8];
+    shifter[12] = state[12];
+
+    // shifting row two
+    shifter[1] = state[5];
+    shifter[5] = state[9];
+    shifter[9] = state[13];
+    shifter[13] = state[1];
+
+    // shifting row three
+    shifter[2] = state[10];
+    shifter[6] = state[14];
+    shifter[10] = state[2];
+    shifter[14] = state[6];
+
+    // shifting row four
+    shifter[3] = state[15];
+    shifter[7] = state[3];
+    shifter[11] = state[7];
+    shifter[15] = state[11];
+
+    for(int i=0; i<16; ++i){
+        state[i] = shifter[i]
+    }
+}
+
+void SubBytes(unsigned char* state){
+    for(int i=0; i<16; ++i){
+        state[i] = sbox[state[i]];
+    }
+}
+
+void Encrypt(unsigned char* message, unsigned char* key){
+}
+
+
 int main(int argc, char* argv[]) {
 	if(argc!=11){
 		printf("Incorrect amount of arguments\n");
