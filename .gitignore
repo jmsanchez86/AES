@@ -104,3 +104,8 @@ venv.bak/
 .mypy_cache/
 
 .nfs*
+*.swp
+a.out
+input.txt
+example.txt
+test.txt

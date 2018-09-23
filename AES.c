@@ -155,28 +155,32 @@ unsigned char invsbox[256] = {
   0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d 
 };
 
+void padInput(unsigned char* message){
+}
+
 void mixColumn(unsigned char* state){
-    unsigned char* temp[16];
+    unsigned char temp[16];
 
-    temp[0] = (mul2[state[0]] ^ mul3[state[1]] ^ state[2] ^ state[3]);
-    temp[1] = (state[0] ^ mul2[state[1]] ^ mul3[state[2]] ^ state[3]);
-    temp[2] = (state[0] ^ state[1] ^ mul2[state[2]] ^ mul3[state[3]]);
-    temp[3] = (mul3[state[0]] ^ state[1] ^ state[2] ^ mul2[state[3]]);
+    temp[0] = (unsigned char)(mul2[state[0]] ^ mul3[state[1]] ^ state[2] ^ state[3]);
+    temp[1] = (unsigned char)(state[0] ^ mul2[state[1]] ^ mul3[state[2]] ^ state[3]);
+    temp[2] = (unsigned char)(state[0] ^ state[1] ^ mul2[state[2]] ^ mul3[state[3]]);
+    temp[3] = (unsigned char)(mul3[state[0]] ^ state[1] ^ state[2] ^ mul2[state[3]]);
 
-    temp[4] = (mul2[state[4]] ^ mul3[state[5]] ^ state[6] ^ state[7]);
-    temp[5] = (state[4] ^ mul2[state[5]] ^ mul3[state[6]] ^ state[7]);
-    temp[6] = (state[4] ^ state[5] ^ mul2[state[6]] ^ mul3[state[7]]);
-    temp[7] = (mul3[state[4]] ^ state[5] ^ state[6] ^ mul2[state[7]]);
+    temp[4] = (unsigned char)(mul2[state[4]] ^ mul3[state[5]] ^ state[6] ^ state[7]);
+    temp[5] = (unsigned char)(state[4] ^ mul2[state[5]] ^ mul3[state[6]] ^ state[7]);
+    temp[6] = (unsigned char)(state[4] ^ state[5] ^ mul2[state[6]] ^ mul3[state[7]]);
+    temp[7] = (unsigned char)(mul3[state[4]] ^ state[5] ^ state[6] ^ mul2[state[7]]);
 
-    temp[8] =  (mul2[state[8]] ^ mul3[state[9]] ^ state[10] ^ state[11]);
-    temp[9] =  (state[8] ^ mul2[state[9]] ^ mul3[state[10]] ^ state[11]);
-    temp[10] = (state[8] ^ state[9] ^ mul2[state[10]] ^ mul3[state[11]]);
-    temp[11] = (mul3[state[8]] ^ state[9] ^ state[10] ^ mul2[state[11]]);
+    temp[8] = (unsigned char)(mul2[state[8]] ^ mul3[state[9]] ^ state[10] ^ state[11]);
+    temp[9] = (unsigned char)(state[8] ^ mul2[state[9]] ^ mul3[state[10]] ^ state[11]);
+    temp[10] = (unsigned char)(state[8] ^ state[9] ^ mul2[state[10]] ^ mul3[state[11]]);
+    temp[11] = (unsigned char)(mul3[state[8]] ^ state[9] ^ state[10] ^ mul2[state[11]]);
 
-    temp[12] = (mul2[state[12]] ^ mul3[state[13]] ^ state[14] ^ state[15]);
-    temp[13] = (state[12] ^ mul2[state[13]] ^ mul3[state[14]] ^ state[15]);
-    temp[14] = (state[12] ^ state[13] ^ mul2[state[14]] ^ mul3[state[15]]);
-    temp[15] = (mul3[state[12]] ^ state[13] ^ state[14] ^ mul2[state[15]]);
+    temp[12] = (unsigned char)(mul2[state[12]] ^ mul3[state[13]] ^ state[14] ^ state[15]);
+    temp[13] = (unsigned char)(state[12] ^ mul2[state[13]] ^ mul3[state[14]] ^ state[15]);
+    temp[14] = (unsigned char)(state[12] ^ state[13] ^ mul2[state[14]] ^ mul3[state[15]]);
+    temp[15] = (unsigned char)(mul3[state[12]] ^ state[13] ^ state[14] ^ mul2[state[15]]);
+    
 
     for(int i=0; i<16; ++i){
         state[i] = temp[i];
@@ -186,8 +190,8 @@ void mixColumn(unsigned char* state){
 void addRoundKey(unsigned char* state, unsigned char* roundKey){
     for(int i=0; i<16; ++i){
         state[i] ^= roundKey[i];
+    }
 }
-
 void ShiftRows(unsigned char* state){
     unsigned char shifter[16];
 
@@ -216,7 +220,7 @@ void ShiftRows(unsigned char* state){
     shifter[15] = state[11];
 
     for(int i=0; i<16; ++i){
-        state[i] = shifter[i]
+        state[i] = shifter[i];
     }
 }
 
@@ -231,6 +235,9 @@ void Encrypt(unsigned char* message, unsigned char* key){
 
 
 int main(int argc, char* argv[]) {
+
+    unsigned char keyfilebytes[16];
+    
 	if(argc!=11){
 		printf("Incorrect amount of arguments\n");
 		printf("Usage: ./program --keysize $KEYSIZE --keyfile $KEYFILE --inputfile $INPUTFILE --outputfile $OUTFILENAME --mode $MODE\n");
@@ -242,12 +249,23 @@ int main(int argc, char* argv[]) {
 		printf("Keysize can either be 128 or 256\n");
 		exit(0);
 	}
-	char* keyfile= argv[4];
-	char* inputfile= argv[6];
-	char* outputfile= argv[8];
-	char* mode= argv[10];
+	unsigned char* keyfile= argv[4];
+	unsigned char* inputfile= argv[6];
+	unsigned char* outputfile= argv[8];
+	unsigned char* mode= argv[10];
 
-	printf("This is a test: %d\n", test_txt_len);
+    FILE *fp;
+
+    fp = fopen(keyfile, "r");
+
+    for(int i=0; i<16; ++i){
+        keyfilebytes[i] = fgetc(fp);
+        printf("keyfilebyes[%d] = %c\n", i, keyfilebytes[i]);
+    }
+
+    fclose(fp);
+
+	//printf("This is a test: %d\n", test_txt_len);
 	//printf("Keyfile: %s, Inputfile: %s, Outputfile: %s, Mode: %s\n",keyfile, inputfile, outputfile, mode);
 
 
