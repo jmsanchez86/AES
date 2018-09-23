@@ -155,7 +155,32 @@ unsigned char invsbox[256] = {
   0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d 
 };
 
-void mixColumn(){
+void mixColumn(unsigned char* state){
+    unsigned char* temp[16];
+
+    temp[0] = (mul2[state[0]] ^ mul3[state[1]] ^ state[2] ^ state[3]);
+    temp[1] = (state[0] ^ mul2[state[1]] ^ mul3[state[2]] ^ state[3]);
+    temp[2] = (state[0] ^ state[1] ^ mul2[state[2]] ^ mul3[state[3]]);
+    temp[3] = (mul3[state[0]] ^ state[1] ^ state[2] ^ mul2[state[3]]);
+
+    temp[4] = (mul2[state[4]] ^ mul3[state[5]] ^ state[6] ^ state[7]);
+    temp[5] = (state[4] ^ mul2[state[5]] ^ mul3[state[6]] ^ state[7]);
+    temp[6] = (state[4] ^ state[5] ^ mul2[state[6]] ^ mul3[state[7]]);
+    temp[7] = (mul3[state[4]] ^ state[5] ^ state[6] ^ mul2[state[7]]);
+
+    temp[8] =  (mul2[state[8]] ^ mul3[state[9]] ^ state[10] ^ state[11]);
+    temp[9] =  (state[8] ^ mul2[state[9]] ^ mul3[state[10]] ^ state[11]);
+    temp[10] = (state[8] ^ state[9] ^ mul2[state[10]] ^ mul3[state[11]]);
+    temp[11] = (mul3[state[8]] ^ state[9] ^ state[10] ^ mul2[state[11]]);
+
+    temp[12] = (mul2[state[12]] ^ mul3[state[13]] ^ state[14] ^ state[15]);
+    temp[13] = (state[12] ^ mul2[state[13]] ^ mul3[state[14]] ^ state[15]);
+    temp[14] = (state[12] ^ state[13] ^ mul2[state[14]] ^ mul3[state[15]]);
+    temp[15] = (mul3[state[12]] ^ state[13] ^ state[14] ^ mul2[state[15]]);
+
+    for(int i=0; i<16; ++i){
+        state[i] = temp[i];
+    }
 }
 
 void addRoundKey(unsigned char* state, unsigned char* roundKey){
