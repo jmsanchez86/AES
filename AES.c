@@ -155,7 +155,44 @@ unsigned char invsbox[256] = {
   0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d 
 };
 
-void padInput(unsigned char* message){
+
+// input array is unsigned char input_txt, input_txt_len
+unsigned char* padInput(){
+
+    int len = input_txt_len - 1;
+    int bytes = len % 16;
+    int bytesneeded;
+
+    unsigned char* paddedinput;
+
+    if(len < 16)
+    {
+        bytesneeded = 16 - len;        
+    }
+    else
+    {
+        bytesneeded = 16 - bytes;
+    }
+
+    paddedinput = malloc((len + bytesneeded) * sizeof(char));
+    for(int i = 0; i<(len + bytesneeded); ++i){
+        
+        if(i < len){
+            paddedinput[i] = input_txt[i];
+        }
+        else
+        {
+            if(i == (len + bytesneeded - 1)){
+                sprintf(&paddedinput[i], "%x", bytesneeded);
+            }
+            else
+            {
+                paddedinput[i] = '0';
+            }
+        }
+    }
+
+    return paddedinput;
 }
 
 void mixColumn(unsigned char* state){
@@ -237,6 +274,7 @@ void Encrypt(unsigned char* message, unsigned char* key){
 int main(int argc, char* argv[]) {
 
     unsigned char keyfilebytes[16];
+    unsigned char* paddedinput;
     
 	if(argc!=11){
 		printf("Incorrect amount of arguments\n");
@@ -265,10 +303,13 @@ int main(int argc, char* argv[]) {
 
     fclose(fp);
 
-	//printf("This is a test: %d\n", test_txt_len);
-	//printf("Keyfile: %s, Inputfile: %s, Outputfile: %s, Mode: %s\n",keyfile, inputfile, outputfile, mode);
+    if((input_txt_len % 16) != 0){
+        paddedinput = padInput();
+    }
 
-
+    for(int j = 0; j<16; ++j){
+        printf("%c", paddedinput[j]);
+    }
 
 	return(0);
 }
