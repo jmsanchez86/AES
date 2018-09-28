@@ -276,21 +276,25 @@ int main(int argc, char* argv[]) {
     unsigned char keyfilebytes[16];
     unsigned char* paddedinput;
     
+
+	unsigned char* keyfile= argv[4];
+	unsigned char* inputfile= argv[6];
+	unsigned char* outputfile= argv[8];
+	unsigned char* mode= argv[10];
+
 	if(argc!=11){
 		printf("Incorrect amount of arguments\n");
 		printf("Usage: ./program --keysize $KEYSIZE --keyfile $KEYFILE --inputfile $INPUTFILE --outputfile $OUTFILENAME --mode $MODE\n");
 		exit(0);
 	}
-	
+
+
 	int keysize= atoi(argv[2]);
 	if(keysize!= 128 && keysize!= 256){
 		printf("Keysize can either be 128 or 256\n");
 		exit(0);
 	}
-	unsigned char* keyfile= argv[4];
-	unsigned char* inputfile= argv[6];
-	unsigned char* outputfile= argv[8];
-	unsigned char* mode= argv[10];
+	
 
     FILE *fp;
 
@@ -298,18 +302,37 @@ int main(int argc, char* argv[]) {
 
     for(int i=0; i<16; ++i){
         keyfilebytes[i] = fgetc(fp);
-        printf("keyfilebyes[%d] = %c\n", i, keyfilebytes[i]);
+        //printf("keyfilebyes[%d] = %c\n", i, keyfilebytes[i]);
     }
-
     fclose(fp);
 
-    if((input_txt_len % 16) != 0){
-        paddedinput = padInput();
+    
+    FILE *ip= fopen(inputfile, "r");
+    char ch;
+    int inputlength = 0;
+    while((ch=fgetc(ip)) != EOF){	// Get length of input file
+    	++inputlength;
+    }
+    fclose(ip);
+//    printf("Input length: %d\n", inputlength);
+
+    char* inputarr=NULL;
+    if(inputlength %16 != 0){ 	// If file size is not a multiple of 16
+
+    }
+    else{				// If file size is a multiple of 16, then still need to pad with 16 0's
+
     }
 
-    for(int j = 0; j<16; ++j){
-        printf("%c", paddedinput[j]);
-    }
+
+
+    // if((input_txt_len % 16) != 0){
+    //     paddedinput = padInput();
+    // }
+
+    // for(int j = 0; j<16; ++j){
+    //     printf("%c", paddedinput[j]);
+    // }
 
 	return(0);
 }
