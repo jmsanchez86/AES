@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
+#include <string.h>
 #include "AES.h"
 
 unsigned char mul2[256] = {
@@ -136,7 +136,7 @@ unsigned char sbox[256] = {
   0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16 
 };
 
-unsigned char invsbox[256] = {
+unsigned char InvSBox[256] = {
   0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
   0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
   0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
@@ -188,7 +188,10 @@ void keyCore(unsigned char* input, unsigned char j){
 
 	input[0] ^= rcon[j];
 }
+
+// Expands the original key for use in each round
 void keyExpansion(unsigned char* key, unsigned char* expandedKeys){
+	
 	for(int i=0; i<16; i++){
 		expandedKeys[i]= key[i];
 	}
@@ -197,7 +200,7 @@ void keyExpansion(unsigned char* key, unsigned char* expandedKeys){
 	int rconIt= 1; 			// Keep track of which iteration of rcon we're on
 	unsigned char temp[4]; 	// Temporary 4 array to do rcon
 
-	while(bytesCreated< 176){
+	while(bytesCreated < 176){
 		for(int i=0; i<4; i++){
 			temp[i]= expandedKeys[i+bytesCreated-4];
 		}
@@ -211,10 +214,6 @@ void keyExpansion(unsigned char* key, unsigned char* expandedKeys){
 			bytesCreated++;
 		}
 	}
-	// for(int i=0; i<20; i++){
- //    	printf("%c ", expandedKeys[i]);
- //    }
-
 }
 void keyExpansion2(unsigned char* key, unsigned char* expandedKeys){
 	for(int i=0; i<32; i++){
@@ -249,74 +248,16 @@ void keyExpansion2(unsigned char* key, unsigned char* expandedKeys){
 			bytesCreated++;
 		}
 	}
-	// for(int i=0; i<20; i++){
- //    	printf("%c ", expandedKeys[i]);
- //    }
-
 }
-void mixColumn(unsigned char* state){
-    unsigned char temp[16];
 
-    temp[0] = (unsigned char)(mul2[state[0]] ^ mul3[state[1]] ^ state[2] ^ state[3]);
-    temp[1] = (unsigned char)(state[0] ^ mul2[state[1]] ^ mul3[state[2]] ^ state[3]);
-    temp[2] = (unsigned char)(state[0] ^ state[1] ^ mul2[state[2]] ^ mul3[state[3]]);
-    temp[3] = (unsigned char)(mul3[state[0]] ^ state[1] ^ state[2] ^ mul2[state[3]]);
-
-    temp[4] = (unsigned char)(mul2[state[4]] ^ mul3[state[5]] ^ state[6] ^ state[7]);
-    temp[5] = (unsigned char)(state[4] ^ mul2[state[5]] ^ mul3[state[6]] ^ state[7]);
-    temp[6] = (unsigned char)(state[4] ^ state[5] ^ mul2[state[6]] ^ mul3[state[7]]);
-    temp[7] = (unsigned char)(mul3[state[4]] ^ state[5] ^ state[6] ^ mul2[state[7]]);
-
-    temp[8] = (unsigned char)(mul2[state[8]] ^ mul3[state[9]] ^ state[10] ^ state[11]);
-    temp[9] = (unsigned char)(state[8] ^ mul2[state[9]] ^ mul3[state[10]] ^ state[11]);
-    temp[10] = (unsigned char)(state[8] ^ state[9] ^ mul2[state[10]] ^ mul3[state[11]]);
-    temp[11] = (unsigned char)(mul3[state[8]] ^ state[9] ^ state[10] ^ mul2[state[11]]);
-
-    temp[12] = (unsigned char)(mul2[state[12]] ^ mul3[state[13]] ^ state[14] ^ state[15]);
-    temp[13] = (unsigned char)(state[12] ^ mul2[state[13]] ^ mul3[state[14]] ^ state[15]);
-    temp[14] = (unsigned char)(state[12] ^ state[13] ^ mul2[state[14]] ^ mul3[state[15]]);
-    temp[15] = (unsigned char)(mul3[state[12]] ^ state[13] ^ state[14] ^ mul2[state[15]]);
-    
-
+// Byte substitution transformation using the sbox lookup table
+void SubBytes(unsigned char* state){
     for(int i=0; i<16; ++i){
-        state[i] = temp[i];
+        state[i] = sbox[state[i]];
     }
 }
-// Inverse of Mix Columns. Rather than multiplication, use a lookup table mulX, then XOR appropriate values
-void invMixColumn(unsigned char* state){
-	unsigned char temp[16];
 
-
-	temp[0] = (unsigned char)(mul14[state[0]] ^ mul11[state[1]] ^ mul13[state[2]] ^ mul9[state[3]]);
-	temp[1] = (unsigned char)(mul9[state[0]] ^ mul14[state[1]] ^ mul11[state[2]] ^ mul13[state[3]]);
-	temp[2] = (unsigned char)(mul13[state[0]] ^ mul9[state[1]] ^ mul14[state[2]] ^ mul11[state[3]]);
-	temp[3] = (unsigned char)(mul11[state[0]] ^ mul13[state[1]] ^ mul9[state[2]] ^ mul14[state[3]]);
-
-	temp[4] = (unsigned char)(mul14[state[4]] ^ mul11[state[5]] ^ mul13[state[6]] ^ mul9[state[7]]);
-	temp[5] = (unsigned char)(mul9[state[4]] ^ mul14[state[5]] ^ mul11[state[6]] ^ mul13[state[7]]);
-	temp[6] = (unsigned char)(mul13[state[4]] ^ mul9[state[5]] ^ mul14[state[6]] ^ mul11[state[7]]);
-	temp[7] = (unsigned char)(mul11[state[4]] ^ mul13[state[5]] ^ mul9[state[6]] ^ mul14[state[7]]);
-
-	temp[8] = (unsigned char)(mul14[state[8]] ^ mul11[state[9]] ^ mul13[state[10]] ^ mul9[state[11]]);
-	temp[9] = (unsigned char)(mul9[state[8]] ^ mul14[state[9]] ^ mul11[state[10]] ^ mul13[state[11]]);
-	temp[10] = (unsigned char)(mul13[state[8]] ^ mul9[state[9]] ^ mul14[state[10]] ^ mul11[state[11]]);
-	temp[11] = (unsigned char)(mul11[state[8]] ^ mul13[state[9]] ^ mul9[state[10]] ^ mul14[state[11]]);	
-
-	temp[12] = (unsigned char)(mul14[state[12]] ^ mul11[state[13]] ^ mul13[state[14]] ^ mul9[state[15]]);
-	temp[13] = (unsigned char)(mul9[state[12]] ^ mul14[state[13]] ^ mul11[state[14]] ^ mul13[state[15]]);
-	temp[14] = (unsigned char)(mul13[state[12]] ^ mul9[state[13]] ^ mul14[state[14]] ^ mul11[state[15]]);
-	temp[15] = (unsigned char)(mul11[state[12]] ^ mul13[state[13]] ^ mul9[state[14]] ^ mul14[state[15]]);
-
-	for(int i=0; i<16; ++i){
-		state[i]= temp[i];
-	}
-}
-
-void addRoundKey(unsigned char* state, unsigned char* roundKey){
-    for(int i=0; i<16; ++i){
-        state[i] ^= roundKey[i];
-    }
-}
+// Shift row transformation, shifts rows of state to the left the appropriate amount
 void ShiftRows(unsigned char* state){
     unsigned char shifter[16];
 
@@ -349,10 +290,111 @@ void ShiftRows(unsigned char* state){
     }
 }
 
-void SubBytes(unsigned char* state){
+void mixColumn(unsigned char* state){
+    unsigned char temp[16];
+
+    temp[0] = (unsigned char)(mul2[state[0]] ^ mul3[state[1]] ^ state[2] ^ state[3]);
+    temp[1] = (unsigned char)(state[0] ^ mul2[state[1]] ^ mul3[state[2]] ^ state[3]);
+    temp[2] = (unsigned char)(state[0] ^ state[1] ^ mul2[state[2]] ^ mul3[state[3]]);
+    temp[3] = (unsigned char)(mul3[state[0]] ^ state[1] ^ state[2] ^ mul2[state[3]]);
+
+    temp[4] = (unsigned char)(mul2[state[4]] ^ mul3[state[5]] ^ state[6] ^ state[7]);
+    temp[5] = (unsigned char)(state[4] ^ mul2[state[5]] ^ mul3[state[6]] ^ state[7]);
+    temp[6] = (unsigned char)(state[4] ^ state[5] ^ mul2[state[6]] ^ mul3[state[7]]);
+    temp[7] = (unsigned char)(mul3[state[4]] ^ state[5] ^ state[6] ^ mul2[state[7]]);
+
+    temp[8] = (unsigned char)(mul2[state[8]] ^ mul3[state[9]] ^ state[10] ^ state[11]);
+    temp[9] = (unsigned char)(state[8] ^ mul2[state[9]] ^ mul3[state[10]] ^ state[11]);
+    temp[10] = (unsigned char)(state[8] ^ state[9] ^ mul2[state[10]] ^ mul3[state[11]]);
+    temp[11] = (unsigned char)(mul3[state[8]] ^ state[9] ^ state[10] ^ mul2[state[11]]);
+
+    temp[12] = (unsigned char)(mul2[state[12]] ^ mul3[state[13]] ^ state[14] ^ state[15]);
+    temp[13] = (unsigned char)(state[12] ^ mul2[state[13]] ^ mul3[state[14]] ^ state[15]);
+    temp[14] = (unsigned char)(state[12] ^ state[13] ^ mul2[state[14]] ^ mul3[state[15]]);
+    temp[15] = (unsigned char)(mul3[state[12]] ^ state[13] ^ state[14] ^ mul2[state[15]]);
+    
+
     for(int i=0; i<16; ++i){
-        state[i] = sbox[state[i]];
+        state[i] = temp[i];
     }
+}
+
+// XOR's round key to state. Used for encryption and decryption
+void AddRoundKey(unsigned char* state, unsigned char* roundKey){
+    for(int i=0; i<16; ++i){
+        state[i] ^= roundKey[i];
+    }
+}
+
+// Inverse of shift rows transformation, shifts right instead of left
+void InvShiftRows(unsigned char* state){
+	unsigned char shifter[16];
+
+    // shifting row zero 0 times
+    shifter[0] = state[0];
+    shifter[4] = state[4];
+    shifter[8] = state[8];
+    shifter[12] = state[12];
+
+    // Shifting row one once to the right
+    shifter[1]= state[13];
+    shifter[5]= state[1];
+    shifter[9]= state[5];
+    shifter[13]= state[9];
+
+    // Shifting row two twice to the right
+    shifter[2]= state[10];
+    shifter[6]= state[14];
+    shifter[10]= state[2];
+    shifter[14]= state[6];
+
+    // Shifting row three thrice to the right
+    shifter[3]= state[7];
+    shifter[7]= state[11];
+    shifter[11]= state[15];
+    shifter[15]= state[3];
+
+    for(int i=0; i<16; ++i){
+    	state[i]= shifter[i];
+    }
+}
+
+// Byte substitution transformation using the InvSBox lookup table
+void InvSubBytes(unsigned char* state){
+	for(int i=0; i<16; ++i){
+		state[i]= InvSBox[state[i]];
+	}
+}
+
+// Inverse of Mix Columns. Rather than multiplication, use a lookup table mulX, then XOR appropriate values
+void InvMixColumn(unsigned char* state){
+	unsigned char temp[16];
+	//0b=11, 0d=13, 0e=14
+	// ({0e}*s0)== mul14[state[0]]
+
+	temp[0] = (unsigned char)(mul14[state[0]] ^ mul11[state[1]] ^ mul13[state[2]] ^ mul9[state[3]]);
+	temp[1] = (unsigned char)(mul9[state[0]] ^ mul14[state[1]] ^ mul11[state[2]] ^ mul13[state[3]]);
+	temp[2] = (unsigned char)(mul13[state[0]] ^ mul9[state[1]] ^ mul14[state[2]] ^ mul11[state[3]]);
+	temp[3] = (unsigned char)(mul11[state[0]] ^ mul13[state[1]] ^ mul9[state[2]] ^ mul14[state[3]]);
+
+	temp[4] = (unsigned char)(mul14[state[4]] ^ mul11[state[5]] ^ mul13[state[6]] ^ mul9[state[7]]);
+	temp[5] = (unsigned char)(mul9[state[4]] ^ mul14[state[5]] ^ mul11[state[6]] ^ mul13[state[7]]);
+	temp[6] = (unsigned char)(mul13[state[4]] ^ mul9[state[5]] ^ mul14[state[6]] ^ mul11[state[7]]);
+	temp[7] = (unsigned char)(mul11[state[4]] ^ mul13[state[5]] ^ mul9[state[6]] ^ mul14[state[7]]);
+
+	temp[8] = (unsigned char)(mul14[state[8]] ^ mul11[state[9]] ^ mul13[state[10]] ^ mul9[state[11]]);
+	temp[9] = (unsigned char)(mul9[state[8]] ^ mul14[state[9]] ^ mul11[state[10]] ^ mul13[state[11]]);
+	temp[10] = (unsigned char)(mul13[state[8]] ^ mul9[state[9]] ^ mul14[state[10]] ^ mul11[state[11]]);
+	temp[11] = (unsigned char)(mul11[state[8]] ^ mul13[state[9]] ^ mul9[state[10]] ^ mul14[state[11]]);	
+
+	temp[12] = (unsigned char)(mul14[state[12]] ^ mul11[state[13]] ^ mul13[state[14]] ^ mul9[state[15]]);
+	temp[13] = (unsigned char)(mul9[state[12]] ^ mul14[state[13]] ^ mul11[state[14]] ^ mul13[state[15]]);
+	temp[14] = (unsigned char)(mul13[state[12]] ^ mul9[state[13]] ^ mul14[state[14]] ^ mul11[state[15]]);
+	temp[15] = (unsigned char)(mul11[state[12]] ^ mul13[state[13]] ^ mul9[state[14]] ^ mul14[state[15]]);
+
+	for(int i=0; i<16; ++i){
+		state[i]= temp[i];
+	}
 }
 
 void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outputFile){
@@ -364,33 +406,32 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 
 	if(keySize==128){
 		roundCount= 9;
-
+		AddRoundKey(state, key);
 		for(int j= 0; j<roundCount; j++){
 			SubBytes(state);
 			ShiftRows(state);
 			mixColumn(state);
-			addRoundKey(state, key+(16*(j+1)));
+			AddRoundKey(state, key+(16*(j+1)));
 		}
 
 		SubBytes(state);
 		ShiftRows(state);
-		addRoundKey(state, key+160);
+		AddRoundKey(state, key+160);
 	}
-	else if(keySize== 256){
-		
-		roundCount= 13;
+	// else if(keySize== 256){		
+	// 	roundCount= 13;
 
-		for(int j= 0; j<roundCount; j++){
-			SubBytes(state);
-			ShiftRows(state);
-			mixColumn(state);
-			addRoundKey(state, key+(16*(j+1)));
-		}
+	// 	for(int j= 0; j<roundCount; j++){
+	// 		SubBytes(state);
+	// 		ShiftRows(state);
+	// 		mixColumn(state);
+	// 		AddRoundKey(state, key+(16*(j+1)));
+	// 	}
 
-		SubBytes(state);
-		ShiftRows(state);
-		addRoundKey(state, key+240);
-	}
+	// 	SubBytes(state);
+	// 	ShiftRows(state);
+	// 	AddRoundKey(state, key+240);
+	// }
 
 	FILE *op= fopen(outputFile, "w");
 	for(int i=0; i<16; ++i){
@@ -398,12 +439,58 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 	}
 	fclose(op);
 	for(int i=0; i<16; i++){
-		//PrintHex(state[i]);
 		printf("%c", state[i]);
 	}
-
-	printf("\n");
 }
+
+void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outputFile){
+	unsigned char state[16];
+	int roundCount; 
+	for(int i=0; i<16; i++){
+		state[i]= message[i];
+	}
+
+	if(keySize==128){
+		roundCount= 9;		
+		AddRoundKey(state, key);
+		for(int j= 0; j<roundCount; j++){
+			InvShiftRows(state);
+			InvSubBytes(state);
+			AddRoundKey(state, key+(16*(j+1)));
+			InvMixColumn(state);
+		}
+		// Final round
+		InvShiftRows(state);
+		InvSubBytes(state);
+		AddRoundKey(state, key+160);
+	}
+	// else if(keySize== 256){		
+	// 	roundCount= 13;
+
+	// 	for(int j= 0; j<roundCount; j++){
+	// 		InvSubBytes(state);
+	// 		InvShiftRows(state);
+	// 		InvMixColumn(state);
+	// 		AddRoundKey(state, key+(16*(j+1)));
+	// 	}
+
+	// 	InvSubBytes(state);
+	// 	InvShiftRows(state);
+	// 	AddRoundKey(state, key+240);
+	// }
+
+	FILE *op= fopen(outputFile, "w");
+	for(int i=0; i<16; ++i){
+		fputc(state[i], op);
+	}
+	fclose(op);
+	// for(int i=0; i<16; i++){
+	// 	printf("%c", state[i]);
+	// }
+
+	// printf("\n");
+}
+
 
 unsigned char expandedKey[176];
 unsigned char expandedKey2[240];
@@ -472,99 +559,123 @@ int main(int argc, char* argv[]) {
     	++inputlength;
     }
     fclose(ip);
-
     char* paddedInput=NULL;
-    int bytes_needed=0;
-    // If input size os less than 16 bytes, then only need to make a single array of 16 bytes
-    if(inputlength < 16){
-    	bytes_needed=16-inputlength;
-    	paddedInput= (char *)malloc(sizeof(char)*16);
-    	padded_size= 16;
+
+
+    if(strcmp(mode, "encrypt")==0){
+	    
+	    int bytes_needed=0;
+	    // If input size os less than 16 bytes, then only need to make a single array of 16 bytes
+	    if(inputlength < 16){
+	    	bytes_needed=16-inputlength;
+	    	paddedInput= (char *)malloc(sizeof(char)*16);
+	    	padded_size= 16;
+	    	ip= fopen(inputfile, "r");
+
+	    	for(int i=0; i<16; i++){			// Place input bytes into padded array
+	    		if(i<inputlength){
+	    			paddedInput[i]= fgetc(ip);
+	    		}
+	    		else{
+	    			if(i==15){					// Place the amount of bytes used to pad on the last index of array
+	    				paddedInput[i]= bytes_needed+'0';
+	    			}
+	    			else{
+	    				paddedInput[i]=0+'0';		// Fill rest of padded bytes with zeros
+	    			}   			
+	    		}
+	    	}
+	    	fclose(ip);
+	    	for(int j=0; j<16; j++){
+	    		printf("%c", paddedInput[j]);
+	    	}
+	    }
+	    // If the input size is a multiple of 16 (or 16) then still need to add 16 extra bytes
+	    // If the input size is not a multiple of 16, but still greater than 16 then need to pad with enough bytes to be a multiple of 16
+	    else{
+	    	if(inputlength %16 ==0){	// Multiple of 16
+	    		int mult= inputlength/16;
+	    		paddedInput= (char *)malloc(sizeof(char)*16*(mult+1));	// Pad with an extra 16 bytes
+	    		ip= fopen(inputfile, "r");
+	    		padded_size= 16*(mult+1);
+	    		for(int i=0; i< 16*(mult+1); i++){
+	    			if(i<inputlength){
+	    				paddedInput[i]= fgetc(ip);
+	    			}
+	    			else{
+	    				if(i== (16*(mult+1))-1){
+	    					paddedInput[i]= 16+'0';
+	    				}
+	    				else{
+	    					paddedInput[i]= 0+'0';
+	    				}
+	    			}
+	    		}
+	    		fclose(ip);
+	    		// for(int k= 0; k<16*(mult+1); k++){
+	    		// 	printf("%c ",paddedInput[k]);
+	    		// }
+	    	}
+	    	else{			// Input length greater than 16 but not a multiple of 16
+	    		padded_size= (inputlength/16+1)* 16;	// Gets the next multiple of 16
+	    		bytes_needed= padded_size- inputlength;
+
+	    		paddedInput= (char *)malloc(sizeof(char)*padded_size);
+	    		ip= fopen(inputfile, "r");
+
+	    		for(int l=0; l<padded_size; ++l){
+	    			if(l<inputlength){
+	    				paddedInput[l]= fgetc(ip);
+	    			}
+	    			else{
+	    				if(l==padded_size-1){
+	    					paddedInput[l]= bytes_needed+'0';
+	    				}
+	    				else{
+	    					paddedInput[l]= 0+'0';
+	    				}
+
+	    			}
+	    		}
+	    		fclose(ip);
+	    		// printf("Padded length: %d", padded_size);
+	      //  		for(int k= 0; k<padded_size; k++){
+	    		// 	printf("%c",paddedInput[k]);
+	    		// }
+	    	}
+
+	    }
+
+	    for(int i=0; i<inputlength; i+=16){
+	     	if(keySize==128){
+	     		Encrypt(paddedInput,expandedKey,keySize, outputFile);
+	     	}
+	     	if(keySize==256){
+	     		Encrypt(paddedInput, expandedKey2, keySize, outputFile);
+	     	}
+	    	
+	    }    	
+    }
+
+    if(strcmp(mode, "decrypt")==0){
+    	paddedInput= malloc(sizeof(char)*inputlength);
     	ip= fopen(inputfile, "r");
 
-    	for(int i=0; i<16; i++){			// Place input bytes into padded array
-    		if(i<inputlength){
-    			paddedInput[i]= fgetc(ip);
-    		}
-    		else{
-    			if(i==15){					// Place the amount of bytes used to pad on the last index of array
-    				paddedInput[i]= bytes_needed+'0';
-    			}
-    			else{
-    				paddedInput[i]=0+'0';		// Fill rest of padded bytes with zeros
-    			}   			
-    		}
+    	for(int i; i<inputlength; ++i){
+    		paddedInput[i]= fgetc(ip);
     	}
+
     	fclose(ip);
-    	// for(int j=0; j<16; j++){
-    	// 	printf("%c", paddedInput[j]);
-    	// }
+	    for(int i=0; i<inputlength; i+=16){
+	     	if(keySize==128){
+	     		Decrypt(paddedInput,expandedKey,keySize, outputFile);
+	     	}
+	     	if(keySize==256){
+	     		Decrypt(paddedInput, expandedKey2, keySize, outputFile);
+	     	}
+	    	
+	    }    	
     }
-    // If the input size is a multiple of 16 (or 16) then still need to add 16 extra bytes
-    // If the input size is not a multiple of 16, but still greater than 16 then need to pad with enough bytes to be a multiple of 16
-    else{
-    	if(inputlength %16 ==0){	// Multiple of 16
-    		int mult= inputlength/16;
-    		paddedInput= (char *)malloc(sizeof(char)*16*(mult+1));	// Pad with an extra 16 bytes
-    		ip= fopen(inputfile, "r");
-    		padded_size= 16*(mult+1);
-    		for(int i=0; i< 16*(mult+1); i++){
-    			if(i<inputlength){
-    				paddedInput[i]= fgetc(ip);
-    			}
-    			else{
-    				if(i== (16*(mult+1))-1){
-    					paddedInput[i]= 16+'0';
-    				}
-    				else{
-    					paddedInput[i]= 0+'0';
-    				}
-    			}
-    		}
-    		fclose(ip);
-    		// for(int k= 0; k<16*(mult+1); k++){
-    		// 	printf("%c ",paddedInput[k]);
-    		// }
-    	}
-    	else{			// Input length greater than 16 but not a multiple of 16
-    		padded_size= (inputlength/16+1)* 16;	// Gets the next multiple of 16
-    		bytes_needed= padded_size- inputlength;
-
-    		paddedInput= (char *)malloc(sizeof(char)*padded_size);
-    		ip= fopen(inputfile, "r");
-
-    		for(int l=0; l<padded_size; ++l){
-    			if(l<inputlength){
-    				paddedInput[l]= fgetc(ip);
-    			}
-    			else{
-    				if(l==padded_size-1){
-    					paddedInput[l]= bytes_needed+'0';
-    				}
-    				else{
-    					paddedInput[l]= 0+'0';
-    				}
-
-    			}
-    		}
-    		fclose(ip);
-    		// printf("Padded length: %d", padded_size);
-      //  		for(int k= 0; k<padded_size; k++){
-    		// 	printf("%c",paddedInput[k]);
-    		// }
-    	}
-
-    }
-
-     for(int i=0; i<inputlength; i+=16){
-     	if(keySize==128){
-     		Encrypt(paddedInput,expandedKey,keySize, outputFile);
-     	}
-     	if(keySize==256){
-     		Encrypt(paddedInput, expandedKey2, keySize, outputFile);
-     	}
-    	
-     }
-
+    free(paddedInput);
 	return(0);
 }
