@@ -174,6 +174,44 @@ unsigned char rcon[256] = {
     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d
 };
 
+void Re_SubBytes(unsigned char* state) {
+	for (int i = 0; i < 16; ++i) {
+		state[i] = invsbox[state[i]];
+	}
+}
+
+void Re_ShiftRows(unsigned char* state) {
+	unsigned char shifter[16];
+
+	// shifting row one
+	shifter[0] = state[0];
+	shifter[4] = state[4];
+	shifter[8] = state[8];
+	shifter[12] = state[12];
+
+	// shifting row two
+	shifter[1] = state[13];
+	shifter[5] = state[1];
+	shifter[9] = state[5];
+	shifter[13] = state[9];
+
+	// shifting row three
+	shifter[2] = state[10];
+	shifter[6] = state[14];
+	shifter[10] = state[2];
+	shifter[14] = state[6];
+
+	// shifting row four
+	shifter[3] = state[7];
+	shifter[7] = state[11];
+	shifter[11] = state[15];
+	shifter[15] = state[3];
+
+	for (int i = 0; i < 16; ++i) {
+		state[i] = shifter[i];
+	}
+}
+
 void PrintHex(unsigned char x){
 	if(x/16 <10) printf("%c",(char)((x/16)+'0'));
 	else if(x/16 >=10) printf("%c",(char)((x/16-10)+'A'));
