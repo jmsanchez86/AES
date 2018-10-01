@@ -174,13 +174,6 @@ unsigned char rcon[256] = {
     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d
 };
 
-void PrintHex(unsigned char x){
-	if(x/16 <10) printf("%c",(char)((x/16)+'0'));
-	else if(x/16 >=10) printf("%c",(char)((x/16-10)+'A'));
-
-	else if(x%16 <10) printf("%c",(char)((x/16)+'0'));
-	else if(x%16 >=10) printf("%c",(char)((x/16-10)+'A'));
-}
 void keyCore(unsigned char* input, unsigned char j){
 	unsigned char temp= input[0];
 	input[0]= input[1];
@@ -223,6 +216,44 @@ void keyExpansion(unsigned char* key, unsigned char* expandedKeys){
  //    }
 
 }
+void keyExpansion2(unsigned char* key, unsigned char* expandedKeys){
+	for(int i=0; i<32; i++){
+		expandedKeys[i]= key[i];
+	}
+
+	int bytesCreated= 32; 	// Keeps track of how many bytes of the expanded key we've made
+	int rconIt= 1; 			// Keep track of which iteration of rcon we're on
+	unsigned char temp[4]; 	// Temporary 4 array to do rcon
+	int cycle=1;
+
+	while(bytesCreated< 240){
+		for(int i=0; i<4; i++){
+			temp[i]= expandedKeys[i+bytesCreated-4];
+		}
+		if(bytesCreated %16==0){
+			if(cycle){
+				keyCore(temp, rconIt);
+				rconIt++;
+				cycle=0;
+			}
+			else{
+				temp[0]= sbox[temp[0]];
+				temp[1]= sbox[temp[1]];
+				temp[2]= sbox[temp[2]];
+				temp[3]= sbox[temp[3]];
+				cycle=1;
+			}
+		}
+		for(unsigned char a= 0; a<4; a++){
+			expandedKeys[bytesCreated]= expandedKeys[bytesCreated-16] ^ temp[a];
+			bytesCreated++;
+		}
+	}
+	// for(int i=0; i<20; i++){
+ //    	printf("%c ", expandedKeys[i]);
+ //    }
+
+}
 void mixColumn(unsigned char* state){
     unsigned char temp[16];
 
@@ -250,6 +281,35 @@ void mixColumn(unsigned char* state){
     for(int i=0; i<16; ++i){
         state[i] = temp[i];
     }
+}
+// Inverse of Mix Columns. Rather than multiplication, use a lookup table mulX, then XOR appropriate values
+void invMixColumn(unsigned char* state){
+	unsigned char temp[16];
+
+
+	temp[0] = (unsigned char)(mul14[state[0]] ^ mul11[state[1]] ^ mul13[state[2]] ^ mul9[state[3]]);
+	temp[1] = (unsigned char)(mul9[state[0]] ^ mul14[state[1]] ^ mul11[state[2]] ^ mul13[state[3]]);
+	temp[2] = (unsigned char)(mul13[state[0]] ^ mul9[state[1]] ^ mul14[state[2]] ^ mul11[state[3]]);
+	temp[3] = (unsigned char)(mul11[state[0]] ^ mul13[state[1]] ^ mul9[state[2]] ^ mul14[state[3]]);
+
+	temp[4] = (unsigned char)(mul14[state[4]] ^ mul11[state[5]] ^ mul13[state[6]] ^ mul9[state[7]]);
+	temp[5] = (unsigned char)(mul9[state[4]] ^ mul14[state[5]] ^ mul11[state[6]] ^ mul13[state[7]]);
+	temp[6] = (unsigned char)(mul13[state[4]] ^ mul9[state[5]] ^ mul14[state[6]] ^ mul11[state[7]]);
+	temp[7] = (unsigned char)(mul11[state[4]] ^ mul13[state[5]] ^ mul9[state[6]] ^ mul14[state[7]]);
+
+	temp[8] = (unsigned char)(mul14[state[8]] ^ mul11[state[9]] ^ mul13[state[10]] ^ mul9[state[11]]);
+	temp[9] = (unsigned char)(mul9[state[8]] ^ mul14[state[9]] ^ mul11[state[10]] ^ mul13[state[11]]);
+	temp[10] = (unsigned char)(mul13[state[8]] ^ mul9[state[9]] ^ mul14[state[10]] ^ mul11[state[11]]);
+	temp[11] = (unsigned char)(mul11[state[8]] ^ mul13[state[9]] ^ mul9[state[10]] ^ mul14[state[11]]);	
+
+	temp[12] = (unsigned char)(mul14[state[12]] ^ mul11[state[13]] ^ mul13[state[14]] ^ mul9[state[15]]);
+	temp[13] = (unsigned char)(mul9[state[12]] ^ mul14[state[13]] ^ mul11[state[14]] ^ mul13[state[15]]);
+	temp[14] = (unsigned char)(mul13[state[12]] ^ mul9[state[13]] ^ mul14[state[14]] ^ mul11[state[15]]);
+	temp[15] = (unsigned char)(mul11[state[12]] ^ mul13[state[13]] ^ mul9[state[14]] ^ mul14[state[15]]);
+
+	for(int i=0; i<16; ++i){
+		state[i]= temp[i];
+	}
 }
 
 void addRoundKey(unsigned char* state, unsigned char* roundKey){
@@ -346,10 +406,12 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 }
 
 unsigned char expandedKey[176];
+unsigned char expandedKey2[240];
 
 int main(int argc, char* argv[]) {
 
     unsigned char keyfilebytes[16];
+    unsigned char keyfilebytes2[32];
     unsigned char* paddedinput;
     int padded_size;
 
@@ -375,15 +437,28 @@ int main(int argc, char* argv[]) {
     FILE *fp;
 
     fp = fopen(keyfile, "r");
-
-    for(int i=0; i<16; ++i){
+    if(keySize==128){
+    	for(int i=0; i<16; ++i){
         keyfilebytes[i] = fgetc(fp);
         //printf("keyfilebytes[%d] = %c\n", i, keyfilebytes[i]);
+    	}
     }
+    if(keySize==256){
+    	for(int i=0; i<32; ++i){
+	        keyfilebytes2[i] = fgetc(fp);
+	        //printf("keyfilebytes[%d] = %c\n", i, keyfilebytes[i]);
+    	}
+    }
+    
     fclose(fp);
 
     // Expand key
-    keyExpansion(keyfilebytes, expandedKey);
+    if(keySize==128){
+    	keyExpansion(keyfilebytes, expandedKey);
+    }
+    if(keySize==256){
+    	keyExpansion2(keyfilebytes2, expandedKey2);
+    }
 
     // for(int i=0; i<10; i++){
     // 	printf("%c ", expandedKey[i]);
@@ -482,7 +557,13 @@ int main(int argc, char* argv[]) {
     }
 
      for(int i=0; i<inputlength; i+=16){
-    	Encrypt(paddedInput,expandedKey,keySize, outputFile);
+     	if(keySize==128){
+     		Encrypt(paddedInput,expandedKey,keySize, outputFile);
+     	}
+     	if(keySize==256){
+     		Encrypt(paddedInput, expandedKey2, keySize, outputFile);
+     	}
+    	
      }
 
 	return(0);

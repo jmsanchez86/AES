@@ -214,6 +214,7 @@ void keyExpansion128(unsigned char* key, unsigned char* expandedKeys){
 		}
 	}
 }
+
 void keyExpansion256(unsigned char* key, unsigned char* expandedKeys){
 	
 	for(int i=0; i<16; i++){
@@ -395,7 +396,7 @@ int main(int argc, char* argv[]) {
 
     FILE *fp;
 
-    fp = fopen(keyfile, "r");
+    
 
     
     
@@ -403,19 +404,23 @@ int main(int argc, char* argv[]) {
     // Expand key
     if(keySize==128){
     	keyExpansion128(keyfilebytes, expandedKey);
+    	fp = fopen(keyfile, "r");
     	for(int i=0; i<16; ++i){
         	keyfilebytes[i] = fgetc(fp);
         //printf("keyfilebytes[%d] = %c\n", i, keyfilebytes[i]);
    		}
+   		fclose(fp);
     }
     else{
-    	keyExpansion256(keyfilebytes, expandedKey);
+    	fp = fopen(keyfile, "r");
+    	keyExpansion256(keyfilebytes256, expandedKey);
     	for(int i=0; i<32; ++i){
         	keyfilebytes256[i] = fgetc(fp);
         //printf("keyfilebytes[%d] = %c\n", i, keyfilebytes[i]);
    		}
+   		fclose(fp);
     }
-    fclose(fp);
+    
 
     // for(int i=0; i<10; i++){
     // 	printf("%c ", expandedKey[i]);
