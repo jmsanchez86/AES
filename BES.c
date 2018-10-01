@@ -174,13 +174,7 @@ unsigned char rcon[256] = {
     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d
 };
 
-void PrintHex(unsigned char x){
-	if(x/16 <10) printf("%c",(char)((x/16)+'0'));
-	else if(x/16 >=10) printf("%c",(char)((x/16-10)+'A'));
 
-	else if(x%16 <10) printf("%c",(char)((x/16)+'0'));
-	else if(x%16 >=10) printf("%c",(char)((x/16-10)+'A'));
-}
 void keyCore(unsigned char* input, unsigned char j){
 	unsigned char temp= input[0];
 	input[0]= input[1];
@@ -195,7 +189,33 @@ void keyCore(unsigned char* input, unsigned char j){
 
 	input[0] ^= rcon[j];
 }
-void keyExpansion(unsigned char* key, unsigned char* expandedKeys){
+void keyExpansion128(unsigned char* key, unsigned char* expandedKeys){
+	
+	for(int i=0; i<16; i++){
+		expandedKeys[i]= key[i];
+	}
+
+	int bytesCreated= 16; 	// Keeps track of how many bytes of the expanded key we've made
+	int rconIt= 1; 			// Keep track of which iteration of rcon we're on
+	unsigned char temp[4]; 	// Temporary 4 array to do rcon
+
+	while(bytesCreated< 176){
+		for(int i=0; i<4; i++){
+			temp[i]= expandedKeys[i+bytesCreated-4];
+		}
+		if(bytesCreated %16==0){
+			keyCore(temp, rconIt);
+			rconIt++;
+		}
+
+		for(unsigned char a= 0; a<4; a++){
+			expandedKeys[bytesCreated]= expandedKeys[bytesCreated-16] ^ temp[a];
+			bytesCreated++;
+		}
+	}
+}
+void keyExpansion256(unsigned char* key, unsigned char* expandedKeys){
+	
 	for(int i=0; i<16; i++){
 		expandedKeys[i]= key[i];
 	}
@@ -316,8 +336,8 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 		ShiftRows(state);
 		addRoundKey(state, key+160);
 	}
-	else if(keySize== 256){
-		
+	else if(keySize==256){
+		//printf("Doing 256\n");
 		roundCount= 13;
 
 		for(int j= 0; j<roundCount; j++){
@@ -329,7 +349,7 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 
 		SubBytes(state);
 		ShiftRows(state);
-		addRoundKey(state, key+240);
+		addRoundKey(state, key+224);
 	}
 
 	FILE *op= fopen(outputFile, "w");
@@ -350,6 +370,7 @@ unsigned char expandedKey[176];
 int main(int argc, char* argv[]) {
 
     unsigned char keyfilebytes[16];
+    unsigned char keyfilebytes256[32];
     unsigned char* paddedinput;
     int padded_size;
 
@@ -376,14 +397,25 @@ int main(int argc, char* argv[]) {
 
     fp = fopen(keyfile, "r");
 
-    for(int i=0; i<16; ++i){
-        keyfilebytes[i] = fgetc(fp);
-        //printf("keyfilebytes[%d] = %c\n", i, keyfilebytes[i]);
-    }
-    fclose(fp);
+    
+    
 
     // Expand key
-    keyExpansion(keyfilebytes, expandedKey);
+    if(keySize==128){
+    	keyExpansion128(keyfilebytes, expandedKey);
+    	for(int i=0; i<16; ++i){
+        	keyfilebytes[i] = fgetc(fp);
+        //printf("keyfilebytes[%d] = %c\n", i, keyfilebytes[i]);
+   		}
+    }
+    else{
+    	keyExpansion256(keyfilebytes, expandedKey);
+    	for(int i=0; i<32; ++i){
+        	keyfilebytes256[i] = fgetc(fp);
+        //printf("keyfilebytes[%d] = %c\n", i, keyfilebytes[i]);
+   		}
+    }
+    fclose(fp);
 
     // for(int i=0; i<10; i++){
     // 	printf("%c ", expandedKey[i]);
@@ -484,6 +516,6 @@ int main(int argc, char* argv[]) {
      for(int i=0; i<inputlength; i+=16){
     	Encrypt(paddedInput,expandedKey,keySize, outputFile);
      }
-
+     free(paddedInput);
 	return(0);
 }
