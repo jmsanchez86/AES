@@ -396,7 +396,7 @@ void InvMixColumn(unsigned char* state){
 	}
 }
 
-void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outputFile){
+void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outputFile, unsigned char* smallKey){
 	unsigned char state[16];
 	int roundCount; 
 	for(int i=0; i<16; i++){
@@ -405,7 +405,7 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 
 	if(keySize==128){
 		roundCount= 9;
-		AddRoundKey(state, key);
+		AddRoundKey(state, smallKey);
 		for(int j= 0; j<roundCount; j++){
 			SubBytes(state);
 			ShiftRows(state);
@@ -442,17 +442,18 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 //	}
 }
 
-void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outputFile){
+void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outputFile, unsigned char* smallKey){
 	unsigned char state[16];
 	int roundCount; 
 	for(int i=0; i<16; i++){
 		state[i]= message[i];
 	}
 
+
 	if(keySize==128){
-		roundCount= 9;		
-		AddRoundKey(state, key);
-		for(int j= 0; j<roundCount; j++){
+		roundCount= 10;		
+		AddRoundKey(state, key+160);
+		for(int j= roundCount-1; j>0; j--){
 			InvShiftRows(state);
 			InvSubBytes(state);
 			AddRoundKey(state, key+(16*(j+1)));
@@ -461,7 +462,7 @@ void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 		// Final round
 		InvShiftRows(state);
 		InvSubBytes(state);
-		AddRoundKey(state, key+160);
+		AddRoundKey(state, smallKey);
 	}
 	// else if(keySize== 256){		
 	// 	roundCount= 13;
@@ -479,7 +480,7 @@ void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 	// }
 
 	FILE *op= fopen(outputFile, "a");
-	for(int i=0; i<16; ++i){
+	for(int i=0; i<16; i++){
 		fputc(state[i], op);
 	}
 	fclose(op);
@@ -585,9 +586,9 @@ int main(int argc, char* argv[]) {
 	    		}
 	    	}
 	    	fclose(ip);
-	    	for(int j=0; j<16; j++){
-	    		printf("%c", paddedInput[j]);
-	    	}
+	    //	for(int j=0; j<16; j++){
+	    //		printf("%c", paddedInput[j]);
+	    //	}
 	    }
 	    // If the input size is a multiple of 16 (or 16) then still need to add 16 extra bytes
 	    // If the input size is not a multiple of 16, but still greater than 16 then need to pad with enough bytes to be a multiple of 16
@@ -644,33 +645,52 @@ int main(int argc, char* argv[]) {
 	    	}
 
 	    }
+	for(int i=0; i<16; i++){
+		printf("%c", paddedInput[i]);
+	}
+	printf("\n");	
 
 	    for(int i=0; i<inputlength; i+=16){
 	     	if(keySize==128){
-	     		Encrypt(paddedInput+i,expandedKey,keySize, outputFile);
+	     		Encrypt(paddedInput+i,expandedKey,keySize, outputFile, keyfilebytes);
 	     	}
 	     	if(keySize==256){
-	     		Encrypt(paddedInput+i, expandedKey2, keySize, outputFile);
+	     		Encrypt(paddedInput+i, expandedKey2, keySize, outputFile, keyfilebytes);
 	     	}
 	    	
-	    }    	
+	    }
+	/*	AddRoundKey(paddedInput);		
+		printf("Addroundkey: ");
+		for(int i=0; i<16; ++i){
+			printf("%c", paddedInput[i]);
+		}
+		printf("\n");
+		AddRoundKey(paddedInput);
+		printf("AddRoundKey: ");
+		for(int i=0; i<16; ++i){
+			printf("%c", paddedInput[i]);
+		}
+		printf("\n");*/
+    	
     }
 
     if(strcmp(mode, "decrypt")==0){
     	paddedInput= malloc(sizeof(char)*inputlength);
     	ip= fopen(inputfile, "r");
-
-    	for(int i; i<inputlength; ++i){
+	
+    	for(int i=0; i<inputlength; ++i){
     		paddedInput[i]= fgetc(ip);
+	//	printf("%c", paddedInput[i]);
     	}
+//	printf("\n");
 
     	fclose(ip);
 	    for(int i=0; i<inputlength; i+=16){
 	     	if(keySize==128){
-	     		Decrypt(paddedInput+i,expandedKey,keySize, outputFile);
+	     		Decrypt(paddedInput+i,expandedKey,keySize, outputFile, keyfilebytes);
 	     	}
 	     	if(keySize==256){
-	     		Decrypt(paddedInput+i, expandedKey2, keySize, outputFile);
+	     		Decrypt(paddedInput+i, expandedKey2, keySize, outputFile, keyfilebytes);
 	     	}
 	    	
 	    }    	
