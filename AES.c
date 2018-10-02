@@ -454,14 +454,14 @@ void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 		roundCount= 9;		
 		AddRoundKey(state, key);
 		for(int j= 0; j<roundCount; j++){
-			InvShiftRows(state);
 			InvSubBytes(state);
-			AddRoundKey(state, key+(16*(j+1)));
+			InvShiftRows(state);
 			InvMixColumn(state);
+			AddRoundKey(state, key+(16*(j+1)));
 		}
 		// Final round
-		InvShiftRows(state);
 		InvSubBytes(state);
+		InvShiftRows(state);
 		AddRoundKey(state, key+160);
 	}
 	// else if(keySize== 256){		
