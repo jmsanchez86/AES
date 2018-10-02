@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "AES.h"
 
 unsigned char mul2[256] = {
 	0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x0c, 0x0e, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a, 0x1c, 0x1e,
@@ -433,14 +432,14 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 	// 	AddRoundKey(state, key+240);
 	// }
 
-	FILE *op= fopen(outputFile, "w");
+	FILE *op= fopen(outputFile, "a");
 	for(int i=0; i<16; ++i){
 		fputc(state[i], op);
 	}
 	fclose(op);
-	for(int i=0; i<16; i++){
-		printf("%c", state[i]);
-	}
+//	for(int i=0; i<16; i++){
+//		printf("%c", state[i]);
+//	}
 }
 
 void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outputFile){
@@ -479,7 +478,7 @@ void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 	// 	AddRoundKey(state, key+240);
 	// }
 
-	FILE *op= fopen(outputFile, "w");
+	FILE *op= fopen(outputFile, "a");
 	for(int i=0; i<16; ++i){
 		fputc(state[i], op);
 	}
@@ -648,10 +647,10 @@ int main(int argc, char* argv[]) {
 
 	    for(int i=0; i<inputlength; i+=16){
 	     	if(keySize==128){
-	     		Encrypt(paddedInput,expandedKey,keySize, outputFile);
+	     		Encrypt(paddedInput+i,expandedKey,keySize, outputFile);
 	     	}
 	     	if(keySize==256){
-	     		Encrypt(paddedInput, expandedKey2, keySize, outputFile);
+	     		Encrypt(paddedInput+i, expandedKey2, keySize, outputFile);
 	     	}
 	    	
 	    }    	
@@ -668,10 +667,10 @@ int main(int argc, char* argv[]) {
     	fclose(ip);
 	    for(int i=0; i<inputlength; i+=16){
 	     	if(keySize==128){
-	     		Decrypt(paddedInput,expandedKey,keySize, outputFile);
+	     		Decrypt(paddedInput+i,expandedKey,keySize, outputFile);
 	     	}
 	     	if(keySize==256){
-	     		Decrypt(paddedInput, expandedKey2, keySize, outputFile);
+	     		Decrypt(paddedInput+i, expandedKey2, keySize, outputFile);
 	     	}
 	    	
 	    }    	
