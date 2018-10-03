@@ -483,17 +483,16 @@ void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 	// ...a b 0 0 0 4
 	// Last byte is number of padded bytes
 	int lastByte= state[15]-'0';
-	printf("%d\n", lastByte);
+	//printf("%d\n", lastByte);
 	int hasPadding=1;
 	int totalBytes=16;
 	for(int i=16-lastByte; i<15; i++){
-		if(state[i]=='0'){
+		if(state[i] !='0'){
 			hasPadding=0;
 			break;
 		}
 	}
 	if(hasPadding){
-		printf("HasPadding");
 		totalBytes-=lastByte;
 	}
 
