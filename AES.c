@@ -456,7 +456,7 @@ void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 		for(int j= roundCount-1; j>0; j--){
 			InvShiftRows(state);
 			InvSubBytes(state);
-			AddRoundKey(state, key+(16*(j+1)));
+			AddRoundKey(state, key+(16*(j)));
 			InvMixColumn(state);
 		}
 		// Final round
@@ -479,8 +479,27 @@ void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 	// 	AddRoundKey(state, key+240);
 	// }
 
+	// Check for padding
+	// ...a b 0 0 0 4
+	// Last byte is number of padded bytes
+	int lastByte= state[15]-'0';
+	printf("%d\n", lastByte);
+	int hasPadding=1;
+	int totalBytes=16;
+	for(int i=16-lastByte; i<15; i++){
+		if(state[i]=='0'){
+			hasPadding=0;
+			break;
+		}
+	}
+	if(hasPadding){
+		printf("HasPadding");
+		totalBytes-=lastByte;
+	}
+
+
 	FILE *op= fopen(outputFile, "a");
-	for(int i=0; i<16; i++){
+	for(int i=0; i<totalBytes; i++){
 		fputc(state[i], op);
 	}
 	fclose(op);
@@ -645,10 +664,10 @@ int main(int argc, char* argv[]) {
 	    	}
 
 	    }
-	for(int i=0; i<16; i++){
-		printf("%c", paddedInput[i]);
-	}
-	printf("\n");	
+	// for(int i=0; i<16; i++){
+	// 	printf("%c", paddedInput[i]);
+	// }
+	// printf("\n");	
 
 	    for(int i=0; i<inputlength; i+=16){
 	     	if(keySize==128){
