@@ -678,7 +678,7 @@ int main(int argc, char* argv[]) {
 	// printf("\n");	
 
 	    for(int i=0; i<padded_size; i+=16){
-	    	printf("I=: %d\n", i);
+	    
 	     	if(keySize==128){
 	     		Encrypt(paddedInput+i,expandedKey,keySize, outputFile, keyfilebytes);
 	     	}
