@@ -396,7 +396,7 @@ void InvMixColumn(unsigned char* state){
 	}
 }
 
-void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outputFile, unsigned char* smallKey){
+void Encrypt(unsigned char* message, unsigned char* expKey, int keySize, char*outputFile, unsigned char* smallKey){
 	unsigned char state[16];
 	int roundCount; 
 	for(int i=0; i<16; i++){
@@ -407,29 +407,36 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 		roundCount= 9;
 		AddRoundKey(state, smallKey);
 		for(int j= 0; j<roundCount; j++){
-			SubBytes(state);
+			SubBytes(state);				
 			ShiftRows(state);
 			mixColumn(state);
-			AddRoundKey(state, key+(16*(j+1)));
+			AddRoundKey(state, expKey+(16*(j+1)));
 		}
 
 		SubBytes(state);
 		ShiftRows(state);
-		AddRoundKey(state, key+160);
+		AddRoundKey(state, expKey+160);
 	}
 	else if(keySize== 256){		
 		roundCount= 13;
+
 		AddRoundKey(state, smallKey);
+
 		for(int j= 0; j<roundCount; j++){
-			SubBytes(state);
+			SubBytes(state);				// Incorrect after first SubBytes call
+			printf("after subbytes: ");
+			for(int i=0; i<16; i++){
+				printf("%x", state[i]);
+			}
+			printf("\n");
 			ShiftRows(state);
 			mixColumn(state);
-			AddRoundKey(state, key+(16*(j+1)));
+			AddRoundKey(state, expKey+(16*(j+1)));
 		}
 
 		SubBytes(state);
 		ShiftRows(state);
-		AddRoundKey(state, key+240);
+		AddRoundKey(state, expKey+224);
 	}
 
 	FILE *op= fopen(outputFile, "a");
@@ -437,9 +444,7 @@ void Encrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 		fputc(state[i], op);
 	}
 	fclose(op);
-//	for(int i=0; i<16; i++){
-//		printf("%c", state[i]);
-//	}
+
 }
 
 void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outputFile, unsigned char* smallKey){
@@ -704,9 +709,7 @@ int main(int argc, char* argv[]) {
 	
     	for(int i=0; i<inputlength; ++i){
     		paddedInput[i]= fgetc(ip);
-	//	printf("%c", paddedInput[i]);
     	}
-//	printf("\n");
 
     	fclose(ip);
 	    for(int i=0; i<inputlength; i+=16){
