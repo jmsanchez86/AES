@@ -486,14 +486,22 @@ void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 	//printf("%d\n", lastByte);
 	int hasPadding=1;
 	int totalBytes=16;
-	for(int i=16-lastByte; i<15; i++){
-		if(state[i] !='0'){
-			hasPadding=0;
-			break;
-		}
+	if(lastByte <=16 && lastByte >0){
+		for(int i=16-lastByte; i<15; i++){
+			if(state[i] !='0'){
+				hasPadding=0;
+				break;
+			}
+		}		
 	}
+	else{
+		hasPadding= 0;
+	}
+
 	if(hasPadding){
 		totalBytes-=lastByte;
+		printf("LastByte: %d ", lastByte);
+		printf("TotalBytes %d\n",totalBytes);
 	}
 
 
@@ -678,7 +686,7 @@ int main(int argc, char* argv[]) {
 	// printf("\n");	
 
 	    for(int i=0; i<padded_size; i+=16){
-	    
+	    	
 	     	if(keySize==128){
 	     		Encrypt(paddedInput+i,expandedKey,keySize, outputFile, keyfilebytes);
 	     	}
@@ -701,7 +709,7 @@ int main(int argc, char* argv[]) {
 //	printf("\n");
 
     	fclose(ip);
-	    for(int i=0; i<padded_size; i+=16){
+	    for(int i=0; i<inputlength; i+=16){
 	     	if(keySize==128){
 	     		Decrypt(paddedInput+i,expandedKey,keySize, outputFile, keyfilebytes);
 	     	}
