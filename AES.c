@@ -468,20 +468,20 @@ void Decrypt(unsigned char* message, unsigned char* key, int keySize, char*outpu
 
 	// Implementation of 256 bit encryption (not working).
 
-	// else if(keySize== 256){		
-	// 	roundCount= 13;
-
-	// 	for(int j= 0; j<roundCount; j++){
-	// 		InvSubBytes(state);
-	// 		InvShiftRows(state);
-	// 		InvMixColumn(state);
-	// 		AddRoundKey(state, key+(16*(j+1)));
-	// 	}
-
-	// 	InvSubBytes(state);
-	// 	InvShiftRows(state);
-	// 	AddRoundKey(state, key+240);
-	// }
+	else if(keySize== 256) {		
+		roundCount= 14;		
+		AddRoundKey(state, key+224);
+		for (int j = roundCount - 1; j > 0; j--) {
+			InvShiftRows(state);
+			InvSubBytes(state);
+			AddRoundKey(state, key + (16 * (j)));
+			InvMixColumn(state);
+		}
+		// Final round
+		InvShiftRows(state);
+		InvSubBytes(state);
+		AddRoundKey(state, smallKey);
+	}
 
 	int lastByte = state[15]-'0';
 	int hasPadding = 1;
