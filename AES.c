@@ -398,7 +398,7 @@ void InvMixColumn(unsigned char* state) {
 	}
 }
 
-// Encrypt method: Runs cipher methods.
+// Encrypt method: Runs the cipher methods.
 void Encrypt(unsigned char* message, unsigned char* expKey, int keySize, char*outputFile, unsigned char* smallKey) {
 	unsigned char state[16];
 	int roundCount; 
