@@ -561,8 +561,11 @@ int main(int argc, char* argv[]) {
     if (keySize == 256) {
     	keyExpansion2(keyfileBytes2, expandedKey2);
     }
-    
-    FILE *ip= fopen(inputFile, "r");
+    FILE *ip;
+    if((ip= fopen(inputFile, "r"))==NULL){
+    	printf("Input file doesn't exist, please try again\n");
+    	exit(0);
+    }
     int inputLength = 0;
     while ((fgetc(ip)) != EOF) {	// Get length of input file
     	++inputLength;
