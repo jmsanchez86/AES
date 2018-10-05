@@ -1,4 +1,10 @@
 # AES
+
+Team Members:
+Khiem Tang (klt2399)
+Alexis Torres (aet2348)
+Jose Sanchez (jms9494)
+
 Repository for Intro to Sec AES Crypto assignment
 
 Notes: 
